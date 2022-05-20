@@ -1,5 +1,5 @@
 # RomiBot
-Repository for the Romi robot py Pololu for SPIKE 293
+Repository for the Romi robot by Pololu for SPIKE 293
 
 ## How to use the program
 1. Set up your ROMI robot following the directions in [WPILIB](https://docs.wpilib.org/en/stable/docs/romi-robot/index.html) 
