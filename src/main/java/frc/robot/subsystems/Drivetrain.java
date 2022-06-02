@@ -4,12 +4,18 @@
 
 package frc.robot.subsystems;
 
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
-import frc.robot.sensors.RomiGyro;
 import edu.wpi.first.wpilibj.motorcontrol.Spark;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.RomiUtils;
+import frc.robot.sensors.RomiGyro;
 
 public class Drivetrain extends SubsystemBase {
   private static final double kCountsPerRevolution = 1440.0;
@@ -34,6 +40,12 @@ public class Drivetrain extends SubsystemBase {
   // Set up the BuiltInAccelerometer
   private final BuiltInAccelerometer m_accelerometer = new BuiltInAccelerometer();
 
+  private final long m_startTime;
+  private double m_relativeTime;
+
+  private XSSFWorkbook m_workbook;
+  private XSSFSheet m_spreadsheet;
+
   /** Creates a new Drivetrain. */
   public Drivetrain() {
     // We need to invert one side of the drivetrain so that positive voltages
@@ -45,15 +57,66 @@ public class Drivetrain extends SubsystemBase {
     m_leftEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
     m_rightEncoder.setDistancePerPulse((Math.PI * kWheelDiameterInch) / kCountsPerRevolution);
     resetEncoders();
+
+    m_startTime = System.currentTimeMillis();
+    m_relativeTime = System.currentTimeMillis() - m_startTime;
+    m_workbook = new XSSFWorkbook();
+    m_spreadsheet = m_workbook.createSheet("Drivetrain");
   }
 
   public void arcadeDrive(double xaxisSpeed, double zaxisRotate) {
     m_diffDrive.arcadeDrive(xaxisSpeed, zaxisRotate);
   }
 
+  public void forzaDrive(double speed, double rotate) {
+    if (speed == 0) {
+      arcadeDrive(speed, rotate);
+      return;
+    } 
+    double leftMotorOutput;
+    double rightMotorOutput;
+
+    double maxInput = Math.copySign(Math.max(Math.abs(speed), Math.abs(rotate)), speed);
+
+    if (speed >= 0) {
+      // First quadrant else second quadrant
+      if (rotate >= 0) {
+        leftMotorOutput = maxInput;
+        rightMotorOutput = speed - rotate;
+      } else {
+        leftMotorOutput = speed + rotate;
+        rightMotorOutput = maxInput;
+      } 
+    } else {
+      // Third quadrant, else forth quadrant
+      if (rotate >= 0.0) {
+        leftMotorOutput = speed + rotate;
+        rightMotorOutput = maxInput;
+      } else {
+        leftMotorOutput = maxInput;
+        rightMotorOutput = speed - rotate;
+      }
+    }
+    SmartDashboard.putNumber("leftOut", leftMotorOutput);
+    SmartDashboard.putNumber("rightOut", rightMotorOutput);
+    percentDrive(leftMotorOutput, rightMotorOutput);
+  }
+
+  public void percentDrive(double left, double right) {
+    m_diffDrive.tankDrive(left, right);
+  }
+
   public void resetEncoders() {
     m_leftEncoder.reset();
     m_rightEncoder.reset();
+  }
+
+  public double getLeftRPM() {
+    return m_leftEncoder.getRate();
+  }
+
+  public double getRightRPM() {
+    return m_rightEncoder.getRate();
   }
 
   public int getLeftEncoderCount() {
@@ -137,6 +200,11 @@ public class Drivetrain extends SubsystemBase {
 
   @Override
   public void periodic() {
-    // This method will be called once per scheduler run
-  }
+    SmartDashboard.putNumber("leftRPM", RomiUtils.round(getLeftRPM(),2));
+    SmartDashboard.putNumber("rightRPM", RomiUtils.round(getRightRPM(),2));
+    
+    m_relativeTime = System.currentTimeMillis() - m_startTime;
+    // add left and righ rpm to spreadsheet
+    
+  }  
 }

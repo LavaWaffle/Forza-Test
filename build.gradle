@@ -16,6 +16,9 @@ def includeDesktopSupport = true
 dependencies {
     implementation wpi.java.deps.wpilib()
     implementation wpi.java.vendor.java()
+    // https://mvnrepository.com/artifact/org.apache.poi/poi-ooxml
+    implementation 'org.apache.poi:poi-ooxml:5.2.2'
+
 
     nativeDebug wpi.java.deps.wpilibJniDebug(wpi.platforms.desktop)
     nativeDebug wpi.java.vendor.jniDebug(wpi.platforms.desktop)
@@ -33,7 +36,7 @@ wpi.sim.addGui().defaultEnabled = true
 wpi.sim.addDriverstation()
 
 //Sets the websocket client remote host.
-wpi.sim.envVar("HALSIMWS_HOST", "10.0.0.124")
+wpi.sim.envVar("HALSIMWS_HOST", "10.0.0.2")
 wpi.sim.addWebsocketsServer().defaultEnabled = true
 wpi.sim.addWebsocketsClient().defaultEnabled = true
 
